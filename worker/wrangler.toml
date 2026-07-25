@@ -10,13 +10,13 @@ bucket_name = "contravel-images"
 # matters for `wrangler dev --remote`, which this project doesn't use.
 
 [vars]
-CF_ACCESS_TEAM_DOMAIN = "https://contravel.cloudflareaccess.com"
-CF_ACCESS_AUD = "REPLACE_WITH_AUD_TAG_FROM_ZERO_TRUST_DASHBOARD"
+CF_ACCESS_TEAM_DOMAIN = "https://lucatiel.cloudflareaccess.com"
+CF_ACCESS_AUD = "0f10c3134c9cc1bd8f868f9733480d205f22618da88287303e6d4204198a380c"
 PUBLIC_IMAGES_BASE_URL = "https://images.contract.kabij.pl"
 
 # Access cannot protect the default *.workers.dev subdomain — attach a
 # custom hostname here (or via the dashboard's Workers "Custom Domains" tab)
 # once the Access Application from the README's manual setup steps exists.
-# [[routes]]
-# pattern = "images-api.contract.kabij.pl/*"
-# custom_domain = true
+[[routes]]
+pattern = "images-api.contract.kabij.pl"
+custom_domain = true
