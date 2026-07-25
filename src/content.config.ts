@@ -16,16 +16,10 @@ const posts = defineCollection({
     draft: z.boolean().default(false),
     tags: z.array(z.string()).default([]),
     summary: z.string().optional(),
-    images: z
-      .array(
-        z.object({
-          src: z.string().url(),
-          alt: z.string(),
-          width: z.number().int().positive(),
-          height: z.number().int().positive(),
-        }),
-      )
-      .default([]),
+    // Plain filename, e.g. "glacier.jpg" — resolved to a real URL at render
+    // time by resolveImageSrc(), never a stored URL. Lives alongside the
+    // post's index.md under public/images/<author>/<post-slug>/.
+    coverImage: z.string().optional(),
   }),
 });
 

@@ -1,39 +1,42 @@
 # Contravel
 
 A blog where our contractors share travel stories. Built with Astro, deployed
-to Cloudflare Pages. Images never live in git (or jj) — they're uploaded to
-Cloudflare R2 through a small Worker, and either git hooks or two plain npm
-commands handle the push/pull around your commits.
+to Cloudflare Pages. Images never live in git (or jj) — they sync to
+Cloudflare R2 from a local folder, and the markdown you write never changes:
+a plain filename always resolves to the right URL, in dev and in prod alike.
 
 ## How it works
 
 - **The blog is public.** Anyone can read the site and its images, no login
   required.
-- **Uploading, deleting, or listing images requires Cloudflare Access.** The
-  Worker's `images-api.*` hostname sits behind a Cloudflare Access
-  Application, which enforces per-hostname — every route on it needs a valid
-  Access session, not just the writes. You authenticate once via
-  `cloudflared`.
-- Images are never committed. `npm run publish-images` finds any post with a
-  local (not-yet-uploaded) image reference, uploads it to R2 (via the
-  Worker), and rewrites your markdown to point at the public URL instead of
-  the local file — so only text ever lands in history. It also deletes any
-  R2 object under a post's prefix that the post no longer references (see
-  "Deleting an image" below) — both need an Access token.
-- `npm run pull-images` downloads images back down into
-  `public/_local-images/`, purely so `npm run dev` has something to render
-  locally. This needs **no authentication at all** — it never calls the
-  Access-gated Worker. It derives what to download directly from every
-  checked-out post's own frontmatter/body, then fetches each straight from
-  R2's separate public custom domain (`images.*`, not behind Access).
-- **If you use plain `git commit`/`git checkout`/`git merge`** (this repo is
-  git-and-jj colocated), the equivalent `.githooks/` hooks do the exact same
-  thing automatically — see "Automatic hooks (git only)" below. **They do
-  not fire under `jj commit`/`jj new`**, since jj doesn't invoke `git commit`
-  under the hood and has no hook mechanism of its own today. If your workflow
-  is jj (as this project's is), treat `publish-images`/`pull-images` as the
-  real interface and the git hooks as a bonus for anyone who commits with
-  plain git.
+- **Your own images live in `public/images/<your-slug>/<post-slug>/`.**
+  You drop files there directly — it's a normal folder, not something a tool
+  generates. It's gitignored; R2 is the source of truth for what's actually
+  published.
+- **`npm run publish-images` syncs that folder to R2.** One-way, folder
+  push: it uploads anything new or changed under your own
+  `public/images/<your-slug>/`. It does **not** delete anything remotely if
+  you remove a local file — sync only ever adds/updates. This needs
+  Cloudflare Access (you authenticate once via `cloudflared`).
+- **Your markdown never gets rewritten.** Write `![alt](glacier.jpg)` inline,
+  or `coverImage: glacier.jpg` in frontmatter — always a plain filename. A
+  small Astro build-time step (a remark plugin) resolves that filename to
+  the real URL when rendering, using nothing but the post's own `author`
+  frontmatter and its directory. Nothing ever mutates your source file, so
+  there's no "did I forget to run a tool and now my file is wrong" state to
+  worry about.
+- **`npm run pull-images` downloads other authors' images** into
+  `public/images/<their-slug>/...` so `npm run dev` has something to render
+  locally for posts that aren't yours. This needs **no authentication at
+  all** — it derives what to download directly from every checked-out
+  post's own content, then fetches straight from R2's public custom domain
+  (`images.*`), never touching the Access-gated Worker.
+- **If you use plain `git checkout`/`git merge`** (this repo is git-and-jj
+  colocated), `.githooks/post-checkout`/`post-merge` run the pull step
+  automatically. There's no git-hook equivalent for publishing — images
+  live in a gitignored folder with no git-trackable trigger to hook, so
+  `npm run publish-images` is the one and only way to publish, for
+  everyone, regardless of git or jj.
 
 ## One-time setup (after cloning)
 
@@ -68,90 +71,91 @@ slug is derived from the local-part of your email (e.g.
 `jane.doe@company.com` → `jane-doe`) — no need to look it up, just match the
 directory to your own `npm run whoami` email.
 
-Reference images as local filenames, next to the post:
+Put your images in the matching folder under `public/images/`, using the
+**same post-slug** as the post directory:
+
+```
+public/images/jane-doe/patagonia-trip/glacier.jpg
+src/content/posts/jane-doe/patagonia-trip/index.md
+```
+
+Reference them by plain filename — frontmatter's `coverImage` and inline
+`![]()` refs both just take the filename, nothing else:
 
 ```yaml
 ---
 title: Three weeks in Patagonia
 author: jane-doe
 pubDate: 2026-07-20
-images:
-  - src: glacier.jpg
-    alt: Perito Moreno glacier
+coverImage: glacier.jpg
 ---
 
 ![Glacier at sunrise](glacier.jpg)
 ```
 
-Before pushing/publishing your change, run:
+This text never changes — no tool ever rewrites it. When you're ready to
+publish:
 
 ```sh
 npm run publish-images
 ```
 
-This uploads `glacier.jpg`, rewrites both the frontmatter and the inline
-reference to the public R2 URL, and writes the rewritten markdown back to
-disk — the binary itself never needs to be added to git/jj at all. If an
-upload fails, it prints exactly which post/image failed and exits non-zero
-rather than leaving a broken reference silently in place. It's safe to run
-repeatedly — already-uploaded images are skipped (checked by content hash),
-and posts that aren't yours are skipped too (not an error).
+This uploads every new/changed file under `public/images/jane-doe/` to R2.
+It's a plain one-way folder push, not something that reads your posts at
+all — it doesn't know or care which files are actually referenced by which
+post, it just mirrors what's in your folder. Removing a file locally does
+**not** delete it from R2 (see below).
 
-**Deleting an image is just removing its reference and running `publish-images`
-again.** There's no separate delete command — editing the post is the delete
-action. Every run compares what a post currently references against what's
-actually in R2 under that post's prefix, and deletes anything no longer
-referenced (also enforced Access-gated and author-scoped on the Worker side,
-same as uploads). Known gaps: this only runs for posts that still have at
-least one image reference left and still exist on disk — removing a post's
-*only/last* image in one edit, or deleting a whole post directory, won't
-auto-clean its R2 objects (nothing left to key the check off of). Delete
-those by hand from R2, or just leave them; they're not linked from anywhere.
-
-A post with **no** image references at all (never had any, or you just
-removed the last one) skips this check entirely and needs no Access
-token — only posts that currently reference at least one image do, since
-checking for orphans means asking the Worker's (Access-gated) list endpoint
-what's actually in R2.
+**There's no delete command.** If you stop referencing an image or remove
+a whole post, the R2 object stays behind — orphaned but harmless (nothing
+links to it, and the storage cost is negligible). If you actually need
+something gone, delete it from the R2 bucket directly (Cloudflare dashboard
+or `wrangler r2 object delete`).
 
 ## Automatic hooks (git only)
 
-If you commit with plain `git` instead of `jj` in this colocated repo, the
-same logic runs automatically: `.githooks/pre-commit` does what
-`publish-images` does, but scoped to what's actually staged, and aborts the
-commit on failure instead of just exiting non-zero; `.githooks/post-checkout`
-and `.githooks/post-merge` do what `pull-images` does, automatically after a
-checkout/merge. Both entry points share the same underlying code
-(`.githooks/lib/upload-post-images.mjs`, `.githooks/lib/sync-images.mjs`), so
-behavior never drifts between the two.
+There's no git-hook equivalent for **publishing** — images live in a
+gitignored folder (`public/images/`), so there's no git-trackable event to
+hook into. `npm run publish-images` is always a manual step, for everyone,
+regardless of git or jj.
+
+**Pulling** other authors' images is still automatic under plain `git`:
+`.githooks/post-checkout` and `.githooks/post-merge` run the same logic as
+`npm run pull-images` after a checkout/merge. They don't fire under
+`jj commit`/`jj new` (jj has no hook mechanism of its own), so if your
+workflow is jj, run `npm run pull-images` manually after pulling.
 
 ## Architecture
 
 ```
 contravel/
-├── src/                 Astro site (static output, deployed to Cloudflare Pages)
-├── worker/              Cloudflare Worker: Access-gated image uploads + R2
+├── src/
+│   ├── lib/images.ts              resolveImageSrc(): the one place filename -> URL happens
+│   └── remark-resolve-images.mjs  build-time rewrite of inline markdown image refs
+├── public/images/        gitignored — your own images (read-write) +
+│                         downloaded copies of others' (read-only), same tree
+├── worker/               Cloudflare Worker: Access-gated image uploads + R2
 ├── config/
 │   └── hooks.config.json    non-secret Worker/image base URLs, committed
 ├── .contravel-author.json   LOCAL ONLY, gitignored — your identity for the hooks
-└── .githooks/           pre-commit / post-checkout / post-merge, plus the
-                        publish-images / pull-images scripts npm run invokes directly
+└── .githooks/            post-checkout / post-merge (pull only), plus the
+                          publish-images / pull-images scripts npm run invokes directly
 ```
 
 - **Reads bypass the Worker entirely.** Individual images are served
-  directly from R2's own public custom domain (`images.travel.kabij.pl`),
-  which is also what lets Astro's built-in `<Image>` optimization work at
-  build time (no auth needed to fetch them).
-- **The Worker only guards writes.** `PUT /images/:author/*path` and
-  `DELETE /images/:author/*path` both verify a Cloudflare Access JWT and only
-  allow a contractor to write/delete within their own author folder.
-  `GET /images/:author[?prefix=...]` (list) is public — it's used by the pull
-  hook to know what's available, and by publish-images' delete reconciliation
-  to know what's on R2 for a given post. The objects it lists are
-  already public-read anyway.
-- Object keys are content-addressed (`<author>/<post-slug>/<name>.<hash><ext>`),
-  so a changed image always gets a new URL — caching is always safe, and the
-  local pull-hook cache never needs to re-verify a file it already has.
+  directly from R2's own public custom domain (`images.travel.kabij.pl`) —
+  a plain `GET` by key, no application logic involved.
+- **The Worker only guards writes.** `PUT /images/:author/*path` verifies a
+  Cloudflare Access JWT and only allows a contractor to write within their
+  own author folder. (`DELETE` and `GET` list routes still exist on the
+  Worker and are still Access-gated/author-scoped the same way, but nothing
+  in this repo's tooling calls them — sync is push-only, see "Writing a post
+  with images" above.)
+- Object keys are plain (`<author>/<post-slug>/<filename>`, no hash) so a
+  filename maps predictably to a URL. Re-uploading the same filename
+  overwrites in place, so R2 objects are served with a short, revalidating
+  cache (`Cache-Control: public, max-age=300, must-revalidate`) rather than
+  cached forever — see `worker/src/images.ts`.
 - No contractor email list is stored or committed anywhere. Both the Worker
   and the hook derive an author's slug the same way, purely from the email
   local-part — see `worker/src/authors.ts` / `.githooks/lib/authors.mjs`.

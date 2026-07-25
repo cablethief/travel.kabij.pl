@@ -1,7 +1,6 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import PostImage from '../../components/PostImage.astro';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts', ({ data }) => !data.draft);
@@ -22,7 +21,6 @@ const { Content } = await render(post);
       <span>{post.data.author}</span> ·
       <time datetime={post.data.pubDate.toISOString()}>{post.data.pubDate.toLocaleDateString()}</time>
     </p>
-    {post.data.images.map((image) => <PostImage {...image} />)}
     <Content />
   </article>
 </BaseLayout>

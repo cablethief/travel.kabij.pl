@@ -18,7 +18,14 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
         author={post.data.author}
         pubDate={post.data.pubDate}
         summary={post.data.summary}
-        coverImage={post.data.images[0]}
+        coverImage={
+          post.data.coverImage && {
+            filename: post.data.coverImage,
+            author: post.data.author,
+            postSlug: post.id.split('/')[1],
+            alt: post.data.title,
+          }
+        }
       />
     ))
   }

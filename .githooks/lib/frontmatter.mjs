@@ -6,61 +6,27 @@ export function parsePost(raw) {
   return matter(raw);
 }
 
-export function stringifyPost(post) {
-  return matter.stringify(post.content, post.data);
-}
-
-export function isLocalRef(ref) {
-  return !/^https?:\/\//i.test(ref);
-}
-
-/** Every distinct local (non-http) image reference in frontmatter `images[].src` and inline `![]()` refs. */
-export function collectLocalImageRefs(post) {
-  const refs = new Set();
-
-  for (const image of post.data.images ?? []) {
-    if (image.src && isLocalRef(image.src)) refs.add(image.src);
-  }
-
-  for (const match of post.content.matchAll(INLINE_IMAGE_RE)) {
-    const ref = match[2];
-    if (isLocalRef(ref)) refs.add(ref);
-  }
-
-  return [...refs];
-}
-
-/** Every distinct already-remote (http) image URL currently referenced in frontmatter `images[].src` and inline `![]()` refs. */
-export function collectReferencedUrls(post) {
-  const urls = new Set();
-
-  for (const image of post.data.images ?? []) {
-    if (image.src && !isLocalRef(image.src)) urls.add(image.src);
-  }
-
-  for (const match of post.content.matchAll(INLINE_IMAGE_RE)) {
-    const ref = match[2];
-    if (!isLocalRef(ref)) urls.add(ref);
-  }
-
-  return urls;
-}
-
 /**
- * Rewrites every local ref found in `rewriteMap` (ref -> {url, width, height})
- * to its uploaded URL, in both frontmatter `images[]` and inline body refs.
- * Mutates and returns `post`.
+ * Every distinct filename this post references — inline `![]()` refs plus
+ * the optional `coverImage` frontmatter field — excluding anything already
+ * an absolute URL or path (hand-authored external images). Used by the pull
+ * hook to know what to download; nothing rewrites these back into the file.
  */
-export function applyRewrites(post, rewriteMap) {
-  post.data.images = (post.data.images ?? []).map((image) => {
-    const rewrite = image.src && rewriteMap.get(image.src);
-    return rewrite ? { ...image, src: rewrite.url, width: rewrite.width, height: rewrite.height } : image;
-  });
+export function collectReferencedFilenames(post) {
+  const filenames = new Set();
 
-  post.content = post.content.replace(INLINE_IMAGE_RE, (full, alt, ref) => {
-    const rewrite = rewriteMap.get(ref);
-    return rewrite ? `![${alt}](${rewrite.url})` : full;
-  });
+  if (post.data.coverImage && isPlainFilename(post.data.coverImage)) {
+    filenames.add(post.data.coverImage);
+  }
 
-  return post;
+  for (const match of post.content.matchAll(INLINE_IMAGE_RE)) {
+    const ref = match[2];
+    if (isPlainFilename(ref)) filenames.add(ref);
+  }
+
+  return [...filenames];
+}
+
+function isPlainFilename(ref) {
+  return !/^https?:\/\//i.test(ref) && !ref.startsWith('/');
 }

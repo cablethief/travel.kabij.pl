@@ -7,7 +7,7 @@ interface Props {
   author: string;
   pubDate: Date;
   summary?: string;
-  coverImage?: { src: string; alt: string; width: number; height: number };
+  coverImage?: { filename: string; author: string; postSlug: string; alt: string };
 }
 const { href, title, author, pubDate, summary, coverImage } = Astro.props;
 ---

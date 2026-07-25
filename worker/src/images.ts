@@ -25,8 +25,13 @@ export async function handlePut(request: Request, env: Env, author: string, path
     return new Response('Missing request body', { status: 400 });
   }
 
+  // No content-addressed hash in the key anymore (see .githooks/lib/sync-my-images.mjs) —
+  // re-uploading the same filename overwrites in place, so a short,
+  // revalidating cache replaces what used to be safe to cache forever.
   const key = `${author}/${path}`;
-  await env.IMAGES_BUCKET.put(key, request.body, { httpMetadata: { contentType } });
+  await env.IMAGES_BUCKET.put(key, request.body, {
+    httpMetadata: { contentType, cacheControl: 'public, max-age=300, must-revalidate' },
+  });
 
   return new Response(JSON.stringify({ url: `${env.PUBLIC_IMAGES_BASE_URL}/${key}`, key }), {
     status: 201,

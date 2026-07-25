@@ -3,13 +3,9 @@ import path from 'node:path';
 
 import { loadHooksConfig } from './config.mjs';
 import { repoRoot } from './git.mjs';
-import { collectReferencedUrls, parsePost } from './frontmatter.mjs';
+import { MissingIdentityError, readLocalAuthorIdentity } from './identity.mjs';
+import { collectReferencedFilenames, parsePost } from './frontmatter.mjs';
 
-/**
- * Finds every post's index.md under src/content/posts, regardless of author —
- * unlike publish-images/pre-commit, pulling doesn't scope to "my own" posts,
- * since a contractor previewing locally wants everyone's images to render.
- */
 function findPostFiles(root) {
   const postsDir = path.join(root, 'src', 'content', 'posts');
   if (!existsSync(postsDir)) return [];
@@ -34,40 +30,53 @@ async function downloadOne(url, destination) {
 }
 
 /**
- * Deliberately does NOT call the Worker's list endpoint — that's an
- * Access-gated hostname (images-api.*), and pulling for local preview must
- * stay auth-free for every contractor, not just whoever's logged in via
- * cloudflared. Instead this derives "what should be present locally"
- * directly from every checked-out post's own referenced image URLs, then
- * downloads each straight from R2's public custom domain (images.*, a
- * separate, non-Access-protected hostname). Idempotent: content-addressed
- * filenames mean "already exists locally" always means "already correct".
- * Never throws: a missing dev-preview image shouldn't block a checkout/merge.
+ * Downloads every image referenced by a checked-out post that isn't your
+ * own (your own live in public/images/<mySlug>/ already — that's your
+ * write-folder, not something to pull). Never touches the Access-gated
+ * Worker: derives the remote URL deterministically (filename + author +
+ * post-slug, same template as src/lib/images.ts) and fetches straight from
+ * R2's public custom domain, so this needs no authentication at all.
+ * Doesn't re-download files that already exist locally — filenames are no
+ * longer content-addressed, so this can go stale if someone edits an image
+ * in place; delete the local file (or the whole public/images/<author>/
+ * folder) to force a fresh copy. Never throws: a missing dev-preview image
+ * shouldn't block a checkout/merge.
  */
 export async function syncImages() {
   const root = repoRoot();
   const { publicImagesBaseUrl } = loadHooksConfig();
-  const localImagesRoot = path.join(root, 'public', '_local-images');
-  const urlPrefix = `${publicImagesBaseUrl}/`;
 
-  const referencedUrls = new Set();
-  for (const file of findPostFiles(root)) {
-    const post = parsePost(readFileSync(file, 'utf8'));
-    for (const url of collectReferencedUrls(post)) referencedUrls.add(url);
+  let mySlug;
+  try {
+    mySlug = readLocalAuthorIdentity().slug;
+  } catch (err) {
+    if (!(err instanceof MissingIdentityError)) throw err;
+    mySlug = null; // no identity set yet — nothing to skip, just pull everything referenced
   }
 
   let downloaded = 0;
-  for (const url of referencedUrls) {
-    if (!url.startsWith(urlPrefix)) continue; // not one of ours (e.g. a hand-authored external image)
-    const destination = path.join(localImagesRoot, url.slice(urlPrefix.length));
-    if (existsSync(destination)) continue;
-    try {
-      await downloadOne(url, destination);
-      downloaded++;
-    } catch (err) {
-      console.warn(`sync-images: failed to download ${url} (${err.message})`);
+  let referencedCount = 0;
+
+  for (const file of findPostFiles(root)) {
+    const post = parsePost(readFileSync(file, 'utf8'));
+    const author = post.data.author;
+    const postSlug = path.basename(path.dirname(file));
+    if (!author || author === mySlug) continue;
+
+    for (const filename of collectReferencedFilenames(post)) {
+      referencedCount++;
+      const destination = path.join(root, 'public', 'images', author, postSlug, filename);
+      if (existsSync(destination)) continue;
+
+      const url = `${publicImagesBaseUrl}/${author}/${postSlug}/${filename}`;
+      try {
+        await downloadOne(url, destination);
+        downloaded++;
+      } catch (err) {
+        console.warn(`sync-images: failed to download ${url} (${err.message})`);
+      }
     }
   }
 
-  console.log(`sync-images: synced ${downloaded} new image(s) across ${referencedUrls.size} referenced`);
+  console.log(`sync-images: synced ${downloaded} new image(s) across ${referencedCount} referenced`);
 }
