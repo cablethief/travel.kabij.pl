@@ -5,7 +5,9 @@ compatibility_date = "2026-07-25"
 [[r2_buckets]]
 binding = "IMAGES_BUCKET"
 bucket_name = "contravel-images"
-preview_bucket_name = "contravel-images-preview"
+# No preview_bucket_name: `wrangler dev` (local mode, the default) emulates
+# R2 in-memory and never touches a real bucket. A preview bucket only
+# matters for `wrangler dev --remote`, which this project doesn't use.
 
 [vars]
 CF_ACCESS_TEAM_DOMAIN = "https://contravel.cloudflareaccess.com"

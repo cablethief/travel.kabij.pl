@@ -134,7 +134,7 @@ contravel/
 These are account-level steps outside this repo, using `wrangler`/the
 Cloudflare dashboard:
 
-1. `npx wrangler r2 bucket create contravel-images` (and `contravel-images-preview` for local `wrangler dev`).
+1. `npx wrangler r2 bucket create contravel-images`.
 2. In the Cloudflare dashboard, attach a **public custom domain** to the
    bucket (e.g. `images.contract.kabij.pl`) — this is what makes reads public
    and CDN-cached with zero Worker involvement.
