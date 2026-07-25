@@ -32,7 +32,7 @@ commands handle the push/pull around your commits.
 ```sh
 npm install
 npm run whoami -- --email you@company.com --name "Your Name"
-cloudflared access login https://images-api.contract.kabij.pl
+cloudflared access login https://images-api.travel.kabij.pl
 ```
 
 - `npm install` wires up the git hooks (`core.hooksPath`) and installs all
@@ -114,7 +114,7 @@ contravel/
 ```
 
 - **Reads bypass the Worker entirely.** Individual images are served
-  directly from R2's own public custom domain (`images.contract.kabij.pl`),
+  directly from R2's own public custom domain (`images.travel.kabij.pl`),
   which is also what lets Astro's built-in `<Image>` optimization work at
   build time (no auth needed to fetch them).
 - **The Worker only guards writes.** `PUT /images/:author/*path` verifies a
@@ -136,10 +136,10 @@ Cloudflare dashboard:
 
 1. `npx wrangler r2 bucket create contravel-images`.
 2. In the Cloudflare dashboard, attach a **public custom domain** to the
-   bucket (e.g. `images.contract.kabij.pl`) — this is what makes reads public
+   bucket (e.g. `images.travel.kabij.pl`) — this is what makes reads public
    and CDN-cached with zero Worker involvement.
 3. In Zero Trust → Access → Applications, create an **Access Application**
-   for `images-api.contract.kabij.pl`, with a policy scoping which
+   for `images-api.travel.kabij.pl`, with a policy scoping which
    contractor identities may authenticate. Copy the Application Audience
    (AUD) tag into `worker/wrangler.toml`'s `CF_ACCESS_AUD`, and confirm
    `CF_ACCESS_TEAM_DOMAIN` matches `https://<team-name>.cloudflareaccess.com`.

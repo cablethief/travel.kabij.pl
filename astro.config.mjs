@@ -2,8 +2,8 @@ import { defineConfig } from 'astro/config';
 
 export default defineConfig({
   output: 'static',
-  site: 'https://contract.kabij.pl',
+  site: 'https://travel.kabij.pl',
   image: {
-    domains: ['images.contract.kabij.pl'],
+    domains: ['images.travel.kabij.pl'],
   },
 });

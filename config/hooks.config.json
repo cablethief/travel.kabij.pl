@@ -1,5 +1,5 @@
 {
-  "workerBaseUrl": "https://images-api.contract.kabij.pl",
-  "accessAppUrl": "https://images-api.contract.kabij.pl",
-  "publicImagesBaseUrl": "https://images.contract.kabij.pl"
+  "workerBaseUrl": "https://images-api.travel.kabij.pl",
+  "accessAppUrl": "https://images-api.travel.kabij.pl",
+  "publicImagesBaseUrl": "https://images.travel.kabij.pl"
 }
