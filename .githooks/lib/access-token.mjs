@@ -19,3 +19,9 @@ export async function getAccessToken(appUrl) {
     throw new AccessTokenError(`Could not get a Cloudflare Access token for ${appUrl}. Run \`cloudflared access login ${appUrl}\` and try again.\n${err.message}`);
   }
 }
+
+/** Returns a function that fetches the token once and reuses it for the rest of the process. */
+export function memoizedAccessToken(appUrl) {
+  let tokenPromise;
+  return () => (tokenPromise ??= getAccessToken(appUrl));
+}

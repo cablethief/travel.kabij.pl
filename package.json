@@ -10,7 +10,9 @@
     "build": "astro build",
     "preview": "astro preview",
     "postinstall": "git config core.hooksPath .githooks && node .githooks/setup.mjs",
-    "whoami": "node .githooks/lib/set-author.mjs"
+    "whoami": "node .githooks/lib/set-author.mjs",
+    "publish-images": "node .githooks/lib/publish-images.mjs",
+    "pull-images": "node .githooks/lib/pull-images.mjs"
   },
   "dependencies": {
     "astro": "^7.1.3",

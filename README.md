@@ -1,25 +1,31 @@
 # Contravel
 
 A blog where our contractors share travel stories. Built with Astro, deployed
-to Cloudflare Pages. Images never live in git — they're uploaded to Cloudflare
-R2 through a small Worker, and git hooks handle the push/pull automatically
-around commits.
+to Cloudflare Pages. Images never live in git (or jj) — they're uploaded to
+Cloudflare R2 through a small Worker, and either git hooks or two plain npm
+commands handle the push/pull around your commits.
 
 ## How it works
 
 - **The blog is public.** Anyone can read the site and its images, no login
   required.
 - **Uploading a new image requires Cloudflare Access.** Only authenticated
-  contractors can add/change images. You authenticate once via `cloudflared`;
-  after that, committing a post with a new local image just works.
-- Images are never committed to git. A **pre-commit hook** finds new/changed
-  images referenced by the post you're committing, uploads them to R2 (via
-  the Worker), and rewrites your markdown to point at the public URL instead
-  of the local file — so only text ever lands in git history.
-- A **post-checkout/post-merge hook** downloads images back down into
-  `public/_local-images/` after you pull/checkout, purely so `npm run dev`
-  has something to render locally. This part needs no authentication — reads
-  are public.
+  contractors can add/change images. You authenticate once via `cloudflared`.
+- Images are never committed. `npm run publish-images` finds any post with a
+  local (not-yet-uploaded) image reference, uploads it to R2 (via the
+  Worker), and rewrites your markdown to point at the public URL instead of
+  the local file — so only text ever lands in history.
+- `npm run pull-images` downloads images back down into
+  `public/_local-images/`, purely so `npm run dev` has something to render
+  locally. This part needs no authentication — reads are public.
+- **If you use plain `git commit`/`git checkout`/`git merge`** (this repo is
+  git-and-jj colocated), the equivalent `.githooks/` hooks do the exact same
+  thing automatically — see "Automatic hooks (git only)" below. **They do
+  not fire under `jj commit`/`jj new`**, since jj doesn't invoke `git commit`
+  under the hood and has no hook mechanism of its own today. If your workflow
+  is jj (as this project's is), treat `publish-images`/`pull-images` as the
+  real interface and the git hooks as a bonus for anyone who commits with
+  plain git.
 
 ## One-time setup (after cloning)
 
@@ -33,21 +39,19 @@ cloudflared access login https://images-api.contract.kabij.pl
   dependencies, including the Worker's (via npm workspaces).
 - `npm run whoami` writes a local, **gitignored** `.contravel-author.json`.
   Use the *same* email you use to log in via `cloudflared` below — this is
-  what the hook uses to know which post directory is "yours" and where to
-  upload. (It's not a security boundary — the Worker independently verifies
-  your identity from your Cloudflare Access token regardless of what's in
-  this file. A mismatch just gets you a 403, not a security hole.)
+  what decides which post directory is "yours" and where to upload. (It's
+  not a security boundary — the Worker independently verifies your identity
+  from your Cloudflare Access token regardless of what's in this file. A
+  mismatch just gets you a 403, not a security hole.)
 - `cloudflared access login` opens an SSO login in your browser once. You'll
   only be asked for this again when your session expires.
 
 Then:
 
 ```sh
+npm run pull-images   # or: git pull / git checkout, if using plain git
 npm run dev
 ```
-
-The first `git pull`/`git checkout` after installing will populate
-`public/_local-images/` automatically so images show up locally.
 
 ## Writing a post with images
 
@@ -71,11 +75,30 @@ images:
 ![Glacier at sunrise](glacier.jpg)
 ```
 
-When you `git commit`, the pre-commit hook uploads `glacier.jpg`, rewrites
-both the frontmatter and the inline reference to the public R2 URL, and
-stages the rewritten markdown — the binary itself is never staged. If the
-upload fails for any reason, the commit is aborted with a clear error rather
-than silently committing a broken reference.
+Before pushing/publishing your change, run:
+
+```sh
+npm run publish-images
+```
+
+This uploads `glacier.jpg`, rewrites both the frontmatter and the inline
+reference to the public R2 URL, and writes the rewritten markdown back to
+disk — the binary itself never needs to be added to git/jj at all. If an
+upload fails, it prints exactly which post/image failed and exits non-zero
+rather than leaving a broken reference silently in place. It's safe to run
+repeatedly — already-uploaded images are skipped (checked by content hash),
+and posts that aren't yours are skipped too (not an error).
+
+## Automatic hooks (git only)
+
+If you commit with plain `git` instead of `jj` in this colocated repo, the
+same logic runs automatically: `.githooks/pre-commit` does what
+`publish-images` does, but scoped to what's actually staged, and aborts the
+commit on failure instead of just exiting non-zero; `.githooks/post-checkout`
+and `.githooks/post-merge` do what `pull-images` does, automatically after a
+checkout/merge. Both entry points share the same underlying code
+(`.githooks/lib/upload-post-images.mjs`, `.githooks/lib/sync-images.mjs`), so
+behavior never drifts between the two.
 
 ## Architecture
 
@@ -86,7 +109,8 @@ contravel/
 ├── config/
 │   └── hooks.config.json    non-secret Worker/image base URLs, committed
 ├── .contravel-author.json   LOCAL ONLY, gitignored — your identity for the hooks
-└── .githooks/           pre-commit / post-checkout / post-merge (Node scripts)
+└── .githooks/           pre-commit / post-checkout / post-merge, plus the
+                        publish-images / pull-images scripts npm run invokes directly
 ```
 
 - **Reads bypass the Worker entirely.** Individual images are served
