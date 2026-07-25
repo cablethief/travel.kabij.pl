@@ -9,15 +9,23 @@ commands handle the push/pull around your commits.
 
 - **The blog is public.** Anyone can read the site and its images, no login
   required.
-- **Uploading a new image requires Cloudflare Access.** Only authenticated
-  contractors can add/change images. You authenticate once via `cloudflared`.
+- **Uploading, deleting, or listing images requires Cloudflare Access.** The
+  Worker's `images-api.*` hostname sits behind a Cloudflare Access
+  Application, which enforces per-hostname — every route on it needs a valid
+  Access session, not just the writes. You authenticate once via
+  `cloudflared`.
 - Images are never committed. `npm run publish-images` finds any post with a
   local (not-yet-uploaded) image reference, uploads it to R2 (via the
   Worker), and rewrites your markdown to point at the public URL instead of
-  the local file — so only text ever lands in history.
+  the local file — so only text ever lands in history. It also deletes any
+  R2 object under a post's prefix that the post no longer references (see
+  "Deleting an image" below) — both need an Access token.
 - `npm run pull-images` downloads images back down into
   `public/_local-images/`, purely so `npm run dev` has something to render
-  locally. This part needs no authentication — reads are public.
+  locally. This needs **no authentication at all** — it never calls the
+  Access-gated Worker. It derives what to download directly from every
+  checked-out post's own frontmatter/body, then fetches each straight from
+  R2's separate public custom domain (`images.*`, not behind Access).
 - **If you use plain `git commit`/`git checkout`/`git merge`** (this repo is
   git-and-jj colocated), the equivalent `.githooks/` hooks do the exact same
   thing automatically — see "Automatic hooks (git only)" below. **They do
@@ -89,6 +97,23 @@ rather than leaving a broken reference silently in place. It's safe to run
 repeatedly — already-uploaded images are skipped (checked by content hash),
 and posts that aren't yours are skipped too (not an error).
 
+**Deleting an image is just removing its reference and running `publish-images`
+again.** There's no separate delete command — editing the post is the delete
+action. Every run compares what a post currently references against what's
+actually in R2 under that post's prefix, and deletes anything no longer
+referenced (also enforced Access-gated and author-scoped on the Worker side,
+same as uploads). Known gaps: this only runs for posts that still have at
+least one image reference left and still exist on disk — removing a post's
+*only/last* image in one edit, or deleting a whole post directory, won't
+auto-clean its R2 objects (nothing left to key the check off of). Delete
+those by hand from R2, or just leave them; they're not linked from anywhere.
+
+A post with **no** image references at all (never had any, or you just
+removed the last one) skips this check entirely and needs no Access
+token — only posts that currently reference at least one image do, since
+checking for orphans means asking the Worker's (Access-gated) list endpoint
+what's actually in R2.
+
 ## Automatic hooks (git only)
 
 If you commit with plain `git` instead of `jj` in this colocated repo, the
@@ -117,10 +142,12 @@ contravel/
   directly from R2's own public custom domain (`images.travel.kabij.pl`),
   which is also what lets Astro's built-in `<Image>` optimization work at
   build time (no auth needed to fetch them).
-- **The Worker only guards writes.** `PUT /images/:author/*path` verifies a
-  Cloudflare Access JWT and only allows a contractor to write into their own
-  author folder. `GET /images/:author` (list) is public — it's just used by
-  the pull hook to know what's available, and the objects it lists are
+- **The Worker only guards writes.** `PUT /images/:author/*path` and
+  `DELETE /images/:author/*path` both verify a Cloudflare Access JWT and only
+  allow a contractor to write/delete within their own author folder.
+  `GET /images/:author[?prefix=...]` (list) is public — it's used by the pull
+  hook to know what's available, and by publish-images' delete reconciliation
+  to know what's on R2 for a given post. The objects it lists are
   already public-read anyway.
 - Object keys are content-addressed (`<author>/<post-slug>/<name>.<hash><ext>`),
   so a changed image always gets a new URL — caching is always safe, and the

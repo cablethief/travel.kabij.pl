@@ -30,6 +30,22 @@ export function collectLocalImageRefs(post) {
   return [...refs];
 }
 
+/** Every distinct already-remote (http) image URL currently referenced in frontmatter `images[].src` and inline `![]()` refs. */
+export function collectReferencedUrls(post) {
+  const urls = new Set();
+
+  for (const image of post.data.images ?? []) {
+    if (image.src && !isLocalRef(image.src)) urls.add(image.src);
+  }
+
+  for (const match of post.content.matchAll(INLINE_IMAGE_RE)) {
+    const ref = match[2];
+    if (!isLocalRef(ref)) urls.add(ref);
+  }
+
+  return urls;
+}
+
 /**
  * Rewrites every local ref found in `rewriteMap` (ref -> {url, width, height})
  * to its uploaded URL, in both frontmatter `images[]` and inline body refs.

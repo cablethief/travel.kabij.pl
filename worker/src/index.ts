@@ -1,5 +1,5 @@
 import { verifyAccessRequest } from './auth';
-import { handleList, handlePut } from './images';
+import { handleDelete, handleList, handlePut } from './images';
 
 export interface Env {
   IMAGES_BUCKET: R2Bucket;
@@ -25,13 +25,22 @@ export default {
         const { email } = await verifyAccessRequest(request, env);
         return await handlePut(request, env, author, path, email);
       }
+      if (request.method === 'DELETE') {
+        if (!path) return new Response('Missing image path', { status: 400 });
+        const { email } = await verifyAccessRequest(request, env);
+        return await handleDelete(env, author, path, email);
+      }
       if (request.method === 'GET' && !path) {
-        // Listing is intentionally public — see README: individual image
-        // reads are served straight from R2's own public custom domain,
-        // never through this Worker, so this Worker's only job is the
-        // Access-gated write path plus this list endpoint the pull hook
-        // uses to know what's available. Nothing here is sensitive.
-        return await handleList(env, author);
+        // The whole images-api.* hostname sits behind a Cloudflare Access
+        // Application, which enforces per-hostname, not per-method — so
+        // this route requires Access too, same as PUT/DELETE, even though
+        // its content isn't sensitive (used only by the delete-reconciliation
+        // step during a publish, where a token is already required anyway).
+        // Individual image reads bypass this Worker entirely — see README —
+        // served straight from R2's own public custom domain instead.
+        const { email } = await verifyAccessRequest(request, env);
+        void email; // no author-scoping needed for reads; verifying just proves a valid Access session
+        return await handleList(env, author, url.searchParams.get('prefix'));
       }
       return new Response('Method not allowed', { status: 405 });
     } catch (err) {

@@ -50,15 +50,20 @@ async function main() {
 
   const errors = [];
   let updatedCount = 0;
+  let deletedCount = 0;
   let checkedCount = 0;
 
   for (const file of findPostFiles(root)) {
     checkedCount++;
     try {
-      const { changed } = await processPostFile({ root, file, mySlug: identity.slug, workerBaseUrl, cache, getAccessToken });
-      if (changed) {
+      const result = await processPostFile({ root, file, mySlug: identity.slug, workerBaseUrl, cache, getAccessToken });
+      if (result.changed) {
         updatedCount++;
         console.log(`updated ${file}`);
+      }
+      if (result.deletedCount > 0) {
+        deletedCount += result.deletedCount;
+        console.log(`deleted ${result.deletedCount} orphaned image(s) for ${file}`);
       }
     } catch (err) {
       if (err instanceof SkippedNotMineError) continue; // not an error — most posts belong to other authors
@@ -71,7 +76,7 @@ async function main() {
   }
 
   saveCache(root, cache);
-  console.log(`\npublish-images: checked ${checkedCount} post(s), updated ${updatedCount}.`);
+  console.log(`\npublish-images: checked ${checkedCount} post(s), updated ${updatedCount}, deleted ${deletedCount} orphaned image(s).`);
 
   if (errors.length > 0) {
     console.error(`\n${errors.length} post(s) had problems:\n`);

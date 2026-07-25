@@ -45,8 +45,9 @@ async function main() {
 
   for (const file of files) {
     try {
-      const { changed } = await processPostFile({ root, file, mySlug: identity.slug, workerBaseUrl, cache, getAccessToken });
+      const { changed, deletedCount } = await processPostFile({ root, file, mySlug: identity.slug, workerBaseUrl, cache, getAccessToken });
       if (changed) stageFile(file);
+      if (deletedCount > 0) console.log(`pre-commit: deleted ${deletedCount} orphaned image(s) for ${file}`);
     } catch (err) {
       if (err instanceof SkippedNotMineError) {
         console.warn(`pre-commit: skipping ${err.message}`);

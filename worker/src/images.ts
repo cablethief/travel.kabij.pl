@@ -34,8 +34,8 @@ export async function handlePut(request: Request, env: Env, author: string, path
   });
 }
 
-export async function handleList(env: Env, author: string): Promise<Response> {
-  const prefix = `${author}/`;
+export async function handleList(env: Env, author: string, subPrefix: string | null): Promise<Response> {
+  const prefix = subPrefix ? `${author}/${subPrefix}` : `${author}/`;
   const items: { path: string; url: string; size: number; uploaded: string; contentType: string | undefined }[] = [];
 
   let cursor: string | undefined;
@@ -43,7 +43,7 @@ export async function handleList(env: Env, author: string): Promise<Response> {
     const page = await env.IMAGES_BUCKET.list({ prefix, cursor, include: ['httpMetadata'] });
     for (const obj of page.objects) {
       items.push({
-        path: obj.key.slice(prefix.length),
+        path: obj.key.slice(`${author}/`.length),
         url: `${env.PUBLIC_IMAGES_BASE_URL}/${obj.key}`,
         size: obj.size,
         uploaded: obj.uploaded.toISOString(),
@@ -54,4 +54,16 @@ export async function handleList(env: Env, author: string): Promise<Response> {
   } while (cursor);
 
   return new Response(JSON.stringify(items), { status: 200, headers: { 'Content-Type': 'application/json' } });
+}
+
+export async function handleDelete(env: Env, author: string, path: string, email: string): Promise<Response> {
+  if (resolveAuthorSlug(email) !== author) {
+    return new Response('You can only delete your own author folder', { status: 403 });
+  }
+  if (!path) {
+    return new Response('Missing image path', { status: 400 });
+  }
+
+  await env.IMAGES_BUCKET.delete(`${author}/${path}`);
+  return new Response(null, { status: 204 });
 }
