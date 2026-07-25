@@ -1,0 +1,25 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<BaseLayout title="Travel Stories">
+  <h1>Travel Stories</h1>
+  {
+    posts.map((post) => (
+      <PostCard
+        href={`/posts/${post.id}`}
+        title={post.data.title}
+        author={post.data.author}
+        pubDate={post.data.pubDate}
+        summary={post.data.summary}
+        coverImage={post.data.images[0]}
+      />
+    ))
+  }
+</BaseLayout>

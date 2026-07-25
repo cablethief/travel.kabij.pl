@@ -1,0 +1,20 @@
+name = "contravel-images-api"
+main = "src/index.ts"
+compatibility_date = "2026-07-25"
+
+[[r2_buckets]]
+binding = "IMAGES_BUCKET"
+bucket_name = "contravel-images"
+preview_bucket_name = "contravel-images-preview"
+
+[vars]
+CF_ACCESS_TEAM_DOMAIN = "https://contravel.cloudflareaccess.com"
+CF_ACCESS_AUD = "REPLACE_WITH_AUD_TAG_FROM_ZERO_TRUST_DASHBOARD"
+PUBLIC_IMAGES_BASE_URL = "https://images.contract.kabij.pl"
+
+# Access cannot protect the default *.workers.dev subdomain — attach a
+# custom hostname here (or via the dashboard's Workers "Custom Domains" tab)
+# once the Access Application from the README's manual setup steps exists.
+# [[routes]]
+# pattern = "images-api.contract.kabij.pl/*"
+# custom_domain = true

@@ -1,0 +1,23 @@
+---
+import PostImage from './PostImage.astro';
+
+interface Props {
+  href: string;
+  title: string;
+  author: string;
+  pubDate: Date;
+  summary?: string;
+  coverImage?: { src: string; alt: string; width: number; height: number };
+}
+const { href, title, author, pubDate, summary, coverImage } = Astro.props;
+---
+
+<article>
+  {coverImage && <PostImage {...coverImage} />}
+  <h2><a href={href}>{title}</a></h2>
+  <p>
+    <span>{author}</span> ·
+    <time datetime={pubDate.toISOString()}>{pubDate.toLocaleDateString()}</time>
+  </p>
+  {summary && <p>{summary}</p>}
+</article>

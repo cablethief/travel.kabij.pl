@@ -1,0 +1,31 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.astro/
+
+# Cloudflare
+.wrangler/
+
+# local-only contractor identity (see README) — never commit
+.contravel-author.json
+
+# images pulled down locally for dev preview; the source of truth is R2
+public/_local-images/
+
+# hook upload-manifest cache
+.githooks/cache/
+
+# images must never be committed directly — the pre-commit hook uploads
+# them to R2 and rewrites references before staging. This is a backstop
+# in case someone force-adds one (git add -f).
+src/content/posts/**/*.jpg
+src/content/posts/**/*.jpeg
+src/content/posts/**/*.png
+src/content/posts/**/*.gif
+src/content/posts/**/*.webp
+src/content/posts/**/*.avif
+
+# editor/OS
+.DS_Store

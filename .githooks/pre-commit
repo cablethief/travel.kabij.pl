@@ -1,0 +1,2 @@
+#!/usr/bin/env node
+import './lib/pre-commit-impl.mjs';
