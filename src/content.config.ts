@@ -16,10 +16,6 @@ const posts = defineCollection({
     draft: z.boolean().default(false),
     tags: z.array(z.string()).default([]),
     summary: z.string().optional(),
-    // Plain filename, e.g. "glacier.jpg" — resolved to a real URL at render
-    // time by resolveImageSrc(), never a stored URL. Lives alongside the
-    // post's index.md under content/images/<author>/<post-slug>/.
-    coverImage: z.string().optional(),
   }),
 });
 

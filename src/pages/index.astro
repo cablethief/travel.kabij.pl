@@ -17,22 +17,12 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
       <p class="empty-state">No stories yet — check back soon.</p>
     ) : (
       <div class="board">
-        {posts.map((post, i) => (
+        {posts.map((post) => (
           <PostCard
-            index={i}
             href={`/posts/${post.id}`}
             title={post.data.title}
             author={post.data.author}
             pubDate={post.data.pubDate}
-            summary={post.data.summary}
-            coverImage={
-              post.data.coverImage && {
-                filename: post.data.coverImage,
-                author: post.data.author,
-                postSlug: post.id.split('/')[1],
-                alt: post.data.title,
-              }
-            }
           />
         ))}
       </div>

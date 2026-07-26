@@ -24,11 +24,11 @@ URL, in dev and in prod alike.
   remotely if you remove a local file — sync only ever adds/updates. This
   needs Cloudflare Access (you authenticate once via `cloudflared`).
 - **Your markdown never gets rewritten.** Write `![alt](images/glacier.jpg)`
-  inline, or `coverImage: images/glacier.jpg` in frontmatter. A small Astro
-  build-time step (a remark plugin) resolves that reference to the real URL
-  when rendering, using nothing but the post's own `author` frontmatter and
-  its directory. Nothing ever mutates your source file, so there's no "did I
-  forget to run a tool and now my file is wrong" state to worry about.
+  inline. A small Astro build-time step (a remark plugin) resolves that
+  reference to the real URL when rendering, using nothing but the post's own
+  `author` frontmatter and its directory. Nothing ever mutates your source
+  file, so there's no "did I forget to run a tool and now my file is wrong"
+  state to worry about.
 - **`npm run pull-images` downloads other authors' images** into their
   posts' own `images/` subfolders so `npm run dev` has something to render
   locally for posts that aren't yours. This needs **no authentication at
@@ -103,15 +103,13 @@ content/posts/jane-doe/patagonia-trip/images/glacier.jpg
 content/posts/jane-doe/patagonia-trip/index.md
 ```
 
-Reference them as `images/<filename>` — frontmatter's `coverImage` and
-inline `![]()` refs both just take that relative path, nothing else:
+Reference them inline as `images/<filename>`, nothing else needed:
 
 ```yaml
 ---
 title: Three weeks in Patagonia
 author: jane-doe
 pubDate: 2026-07-20
-coverImage: images/glacier.jpg
 ---
 
 ![Glacier at sunrise](images/glacier.jpg)

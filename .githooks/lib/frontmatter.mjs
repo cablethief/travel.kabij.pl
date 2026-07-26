@@ -7,18 +7,13 @@ export function parsePost(raw) {
 }
 
 /**
- * Every distinct image ref this post uses (e.g. "images/glacier.jpg") —
- * inline `![]()` refs plus the optional `coverImage` frontmatter field —
- * excluding anything already an absolute URL or path (hand-authored
- * external images). Used by the pull hook to know what to download;
- * nothing rewrites these back into the file.
+ * Every distinct image ref this post uses (e.g. "images/glacier.jpg") from
+ * inline `![]()` refs — excluding anything already an absolute URL or path
+ * (hand-authored external images). Used by the pull hook to know what to
+ * download; nothing rewrites these back into the file.
  */
 export function collectReferencedFilenames(post) {
   const filenames = new Set();
-
-  if (post.data.coverImage && isPlainFilename(post.data.coverImage)) {
-    filenames.add(post.data.coverImage);
-  }
 
   for (const match of post.content.matchAll(INLINE_IMAGE_RE)) {
     const ref = match[2];

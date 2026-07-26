@@ -3,7 +3,6 @@ title: How to add a post to this blog
 author: michaelkruger
 pubDate: 2026-07-26
 summary: A worked example of writing a post and publishing a photo, for anyone contributing to Contravel.
-coverImage: images/drop-photos-here.png
 ---
 
 This post is itself the example. If you're adding a story to Contravel, here's
@@ -16,7 +15,7 @@ is the local part of your email — `jane.doe@company.com` becomes `jane-doe`.
 This post's own path is `content/posts/michaelkruger/how-posting-works/index.md`.
 
 Frontmatter needs a `title`, `author` (must match your slug), and `pubDate`.
-`coverImage` and `summary` are optional.
+`summary` is optional (used as this page's meta description).
 
 ## 2. Drop your photos in an `images/` folder next to the post
 
@@ -32,8 +31,7 @@ still writing, with zero knowledge of how this site actually gets built.
 
 ![A generated placeholder image standing in for a real travel photo](images/drop-photos-here.png)
 
-Reference a photo as `images/<filename>`, either inline like above or as
-`coverImage` in frontmatter for the listing-page thumbnail. That's it — no
+Reference a photo as `images/<filename>` inline, like above. That's it — no
 URL, no upload step baked into the text. What you write here never changes,
 no matter what happens next.
 
