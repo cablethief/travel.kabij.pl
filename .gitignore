@@ -22,5 +22,8 @@ content/posts/*/*/images/
 # hook sync-manifest cache
 .githooks/cache/
 
+# Nix (direnv companion, if you use it — .envrc itself isn't checked in either)
+.direnv/
+
 # editor/OS
 .DS_Store

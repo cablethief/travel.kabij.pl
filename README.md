@@ -44,6 +44,12 @@ URL, in dev and in prod alike.
 
 ## One-time setup (after cloning)
 
+If you use Nix, `nix develop` (or `direnv allow` with an `.envrc` containing
+`use flake`) drops you into a shell with the right Node version, plus
+`cloudflared` and `jj`, already on `PATH` — nothing to install by hand.
+Otherwise, install Node 24, `cloudflared`, and (if you want it) `jj`
+yourself before continuing.
+
 ```sh
 npm install
 npm run whoami -- --email you@company.com --name "Your Name"
@@ -149,6 +155,7 @@ workflow is jj, run `npm run pull-images` manually after pulling.
 
 ```
 contravel/
+├── flake.nix             optional: `nix develop` for Node/cloudflared/jj
 ├── content/
 │   └── posts/
 │       └── <author>/<post-slug>/
