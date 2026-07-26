@@ -14,7 +14,10 @@ dist/
 # your own images (synced to R2 via `npm run publish-images`) plus
 # downloaded copies of other authors' images for local preview
 # (`npm run pull-images`). Never committed — R2 is the source of truth.
-content/images/
+# Lives inside each post's own directory (not a separate tree) specifically
+# so plain markdown previewers (VS Code, etc.) can follow the relative path
+# and show the image without knowing anything about this project's build.
+content/posts/*/*/images/
 
 # hook sync-manifest cache
 .githooks/cache/

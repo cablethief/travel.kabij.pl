@@ -7,10 +7,11 @@ export function parsePost(raw) {
 }
 
 /**
- * Every distinct filename this post references — inline `![]()` refs plus
- * the optional `coverImage` frontmatter field — excluding anything already
- * an absolute URL or path (hand-authored external images). Used by the pull
- * hook to know what to download; nothing rewrites these back into the file.
+ * Every distinct image ref this post uses (e.g. "images/glacier.jpg") —
+ * inline `![]()` refs plus the optional `coverImage` frontmatter field —
+ * excluding anything already an absolute URL or path (hand-authored
+ * external images). Used by the pull hook to know what to download;
+ * nothing rewrites these back into the file.
  */
 export function collectReferencedFilenames(post) {
   const filenames = new Set();

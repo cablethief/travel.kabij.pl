@@ -31,16 +31,16 @@ async function downloadOne(url, destination) {
 
 /**
  * Downloads every image referenced by a checked-out post that isn't your
- * own (your own live in content/images/<mySlug>/ already — that's your
- * write-folder, not something to pull). Never touches the Access-gated
+ * own (your own already live in that post's own images/ subfolder — that's
+ * your write-folder, not something to pull). Never touches the Access-gated
  * Worker: derives the remote URL deterministically (filename + author +
  * post-slug, same template as src/lib/images.ts) and fetches straight from
  * R2's public custom domain, so this needs no authentication at all.
  * Doesn't re-download files that already exist locally — filenames are no
  * longer content-addressed, so this can go stale if someone edits an image
- * in place; delete the local file (or the whole content/images/<author>/
- * folder) to force a fresh copy. Never throws: a missing dev-preview image
- * shouldn't block a checkout/merge.
+ * in place; delete the local file (or the post's whole images/ folder) to
+ * force a fresh copy. Never throws: a missing dev-preview image shouldn't
+ * block a checkout/merge.
  */
 export async function syncImages() {
   const root = repoRoot();
@@ -63,9 +63,10 @@ export async function syncImages() {
     const postSlug = path.basename(path.dirname(file));
     if (!author || author === mySlug) continue;
 
-    for (const filename of collectReferencedFilenames(post)) {
+    for (const ref of collectReferencedFilenames(post)) {
       referencedCount++;
-      const destination = path.join(root, 'content', 'images', author, postSlug, filename);
+      const filename = ref.replace(/^images\//, '');
+      const destination = path.join(path.dirname(file), 'images', filename);
       if (existsSync(destination)) continue;
 
       const url = `${publicImagesBaseUrl}/${author}/${postSlug}/${filename}`;

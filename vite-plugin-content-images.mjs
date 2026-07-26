@@ -11,18 +11,18 @@ const CONTENT_TYPES = {
 };
 
 /**
- * Dev-only: serves /images/* from content/images/ during `astro dev`.
- *
- * content/images/ deliberately isn't under public/ — it's gitignored
- * content-author state (your own images to sync, plus downloaded copies of
- * others'), not a real static asset directory, and production never reads
- * it at all (images always resolve to the R2 URL in prod; this middleware
- * only exists so local preview has something to render). Nothing here runs
- * in the actual deployed site — Cloudflare Pages serves the static `dist/`
- * output, not this dev server.
+ * Dev-only: serves /images/<author>/<post-slug>/<filename> during `astro
+ * dev` from content/posts/<author>/<post-slug>/images/<filename> — images
+ * live inside each post's own directory (gitignored) rather than a separate
+ * tree, specifically so a plain markdown previewer can follow the relative
+ * `images/glacier.jpg` reference and show it with no knowledge of this
+ * project's build. Production never reads this at all — images always
+ * resolve to the R2 URL there; this middleware only exists so local preview
+ * has something to render. Nothing here runs in the deployed site —
+ * Cloudflare Pages serves the static `dist/` output, not this dev server.
  */
 export function contentImagesPlugin() {
-  const imagesRoot = path.join(process.cwd(), 'content', 'images');
+  const postsRoot = path.join(process.cwd(), 'content', 'posts');
 
   return {
     name: 'serve-content-images',
@@ -31,9 +31,13 @@ export function contentImagesPlugin() {
         if (!req.url?.startsWith('/images/')) return next();
 
         const relPath = decodeURIComponent(req.url.slice('/images/'.length).split('?')[0]);
-        const filePath = path.resolve(imagesRoot, relPath);
+        const segments = relPath.split('/');
+        if (segments.length !== 3 || segments.some((s) => !s || s === '.' || s === '..')) return next();
 
-        if (!filePath.startsWith(imagesRoot + path.sep) || !existsSync(filePath) || !statSync(filePath).isFile()) {
+        const [author, postSlug, filename] = segments;
+        const filePath = path.join(postsRoot, author, postSlug, 'images', filename);
+
+        if (!filePath.startsWith(postsRoot + path.sep) || !existsSync(filePath) || !statSync(filePath).isFile()) {
           return next();
         }
 

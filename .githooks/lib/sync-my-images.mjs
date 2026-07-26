@@ -47,46 +47,63 @@ function walk(dir, root, out = []) {
 }
 
 /**
+ * Finds every image under content/posts/<mySlug>/<post-slug>/images/,
+ * alongside the post they belong to (not a separate tree — see README).
+ * Returns { remotePath, absPath }, where remotePath ("<post-slug>/<filename>")
+ * matches the R2 key convention exactly.
+ */
+function findMyImages(root, mySlug) {
+  const myPostsDir = path.join(root, 'content', 'posts', mySlug);
+  if (!existsSync(myPostsDir)) return [];
+
+  const results = [];
+  for (const entry of readdirSync(myPostsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const postSlug = entry.name;
+    const imagesDir = path.join(myPostsDir, postSlug, 'images');
+    if (!existsSync(imagesDir)) continue;
+
+    for (const relPath of walk(imagesDir, imagesDir)) {
+      results.push({ remotePath: `${postSlug}/${relPath}`, absPath: path.join(imagesDir, relPath) });
+    }
+  }
+  return results;
+}
+
+/**
  * One-way, folder-authoritative push: uploads every new/changed file under
- * content/images/<mySlug>/ to R2. Never deletes anything remotely — removing
- * a file from the folder just stops it being re-uploaded, it doesn't get
- * cleaned up on the server. No markdown involved at all: this doesn't know
- * or care which posts reference which files.
+ * your own posts' images/ subfolders to R2. Never deletes anything
+ * remotely — removing a file from the folder just stops it being
+ * re-uploaded, it doesn't get cleaned up on the server. No markdown
+ * involved at all: this doesn't read post content, just the filesystem.
  */
 export async function syncMyImages({ root, mySlug, workerBaseUrl, getAccessToken }) {
-  const myImagesDir = path.join(root, 'content', 'images', mySlug);
   const cache = loadCache(root);
-
-  if (!existsSync(myImagesDir)) {
-    return { checked: 0, uploaded: 0 };
-  }
-
-  const relativePaths = walk(myImagesDir, myImagesDir);
+  const files = findMyImages(root, mySlug);
   let uploaded = 0;
 
-  for (const relativePath of relativePaths) {
-    const absPath = path.join(myImagesDir, relativePath);
-    const ext = path.extname(relativePath).toLowerCase();
+  for (const { remotePath, absPath } of files) {
+    const ext = path.extname(remotePath).toLowerCase();
     const contentType = CONTENT_TYPES[ext];
     if (!contentType) {
-      throw new SyncImagesError(`content/images/${mySlug}/${relativePath} has an unsupported extension "${ext}". Allowed: ${Object.keys(CONTENT_TYPES).join(', ')}`);
+      throw new SyncImagesError(`${path.relative(root, absPath)} has an unsupported extension "${ext}". Allowed: ${Object.keys(CONTENT_TYPES).join(', ')}`);
     }
 
     const buffer = readFileSync(absPath);
     const hash = sha256(buffer);
-    if (cache[relativePath] === hash) continue; // unchanged since last sync
+    if (cache[remotePath] === hash) continue; // unchanged since last sync
 
     try {
       const accessToken = await getAccessToken();
-      await putImage({ workerBaseUrl, author: mySlug, path: relativePath, filePath: absPath, contentType, accessToken });
+      await putImage({ workerBaseUrl, author: mySlug, path: remotePath, filePath: absPath, contentType, accessToken });
     } catch (err) {
-      throw new SyncImagesError(`Failed to upload ${relativePath}: ${err.message}`);
+      throw new SyncImagesError(`Failed to upload ${remotePath}: ${err.message}`);
     }
 
-    cache[relativePath] = hash;
+    cache[remotePath] = hash;
     uploaded++;
   }
 
   saveCache(root, cache);
-  return { checked: relativePaths.length, uploaded };
+  return { checked: files.length, uploaded };
 }

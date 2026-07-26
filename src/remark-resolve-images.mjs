@@ -7,10 +7,10 @@ import { resolveImageSrc } from './lib/images.ts';
 const isDev = process.env.NODE_ENV !== 'production';
 
 /**
- * Rewrites inline markdown image refs (`![alt](glacier.jpg)`) from a plain
- * filename to the resolved URL, using the post's own frontmatter `author`
- * and its directory-derived post-slug. The post's source text never
- * changes — this only affects the rendered output.
+ * Rewrites inline markdown image refs (`![alt](images/glacier.jpg)`) to the
+ * resolved URL, using the post's own frontmatter `author` and its
+ * directory-derived post-slug. The post's source text never changes — this
+ * only affects the rendered output.
  */
 export function remarkResolveImages() {
   return (tree, file) => {
