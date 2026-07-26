@@ -2,11 +2,11 @@
 title: How to add a post to this blog
 author: michaelkruger
 pubDate: 2026-07-26
-summary: A worked example of writing a post and publishing a photo, for anyone contributing to Contravel.
+summary: A worked example of writing a post and publishing a photo, for anyone contributing here.
 ---
 
-This post is itself the example. If you're adding a story to Contravel, here's
-the whole flow.
+This post is itself the example. If you're adding a story, here's the whole
+flow.
 
 ## 1. Create your post
 

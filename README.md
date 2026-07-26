@@ -1,4 +1,4 @@
-# Contravel
+# Work Travel Stories
 
 A blog where our contractors share travel stories. Built with Astro, deployed
 to Cloudflare Pages. Images never live in git (or jj) — they sync to
@@ -152,7 +152,7 @@ workflow is jj, run `npm run pull-images` manually after pulling.
 ## Architecture
 
 ```
-contravel/
+./
 ├── flake.nix             optional: `nix develop` for Node/cloudflared/jj
 ├── content/
 │   └── posts/

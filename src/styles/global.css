@@ -73,7 +73,7 @@ h3 {
 
 .site-header {
   background: var(--board);
-  border-bottom: 3px solid var(--amber);
+  border-bottom: 1px solid var(--amber);
   padding: 1.25rem 1.5rem;
 }
 .site-header a {
@@ -88,28 +88,9 @@ h3 {
 .site-header a:hover {
   color: var(--amber);
 }
-.site-tagline {
-  display: block;
-  color: #6f9184;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  margin-top: 0.4rem;
-}
 
 main {
   max-width: 46rem;
   margin: 0 auto;
   padding: 2.5rem 1.5rem 5rem;
-}
-
-.site-footer {
-  text-align: center;
-  padding: 2rem 1.5rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
 }

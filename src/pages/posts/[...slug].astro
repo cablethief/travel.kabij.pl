@@ -22,13 +22,9 @@ const dateLabel = post.data.pubDate
   <article class="story">
     <p class="story__back"><a href="/">&larr; All departures</a></p>
     <h1 class="story__title">{post.data.title}</h1>
-    <div class="story__stub">
-      <span><span class="story__label">Traveller</span>{post.data.author}</span>
-      <span
-        ><span class="story__label">Date</span><time datetime={post.data.pubDate.toISOString()}>{dateLabel}</time
-        ></span
-      >
-    </div>
+    <p class="story__meta">
+      {post.data.author} · <time datetime={post.data.pubDate.toISOString()}>{dateLabel}</time>
+    </p>
     <div class="story__prose">
       <Content />
     </div>
@@ -55,24 +51,13 @@ const dateLabel = post.data.pubDate
     margin-bottom: 1rem;
   }
 
-  .story__stub {
-    display: flex;
-    gap: 2rem;
-    flex-wrap: wrap;
-    border-top: 1px dashed var(--board-line);
-    border-bottom: 1px dashed var(--board-line);
-    padding: 0.85rem 0;
-    margin-bottom: 2.5rem;
+  .story__meta {
     font-family: var(--font-mono);
-    font-size: 0.85rem;
-  }
-  .story__label {
-    display: block;
-    font-size: 0.65rem;
-    letter-spacing: 0.12em;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--ink-soft);
-    margin-bottom: 0.15rem;
+    margin-bottom: 2.5rem;
   }
 
   .story__prose {

@@ -1,11 +1,14 @@
 ---
 import '../styles/global.css';
 
+const SITE_NAME = 'Work Travel Stories';
+
 interface Props {
-  title: string;
+  title?: string;
   description?: string;
 }
 const { title, description } = Astro.props;
+const pageTitle = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
 ---
 
 <!doctype html>
@@ -20,17 +23,15 @@ const { title, description } = Astro.props;
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <title>{title} · Contravel</title>
+    <title>{pageTitle}</title>
     {description && <meta name="description" content={description} />}
   </head>
   <body>
     <header class="site-header">
-      <a href="/">Contravel</a>
-      <span class="site-tagline">Travel notes from the team</span>
+      <a href="/">{SITE_NAME}</a>
     </header>
     <main>
       <slot />
     </main>
-    <footer class="site-footer">Written on the road, published from everywhere.</footer>
   </body>
 </html>

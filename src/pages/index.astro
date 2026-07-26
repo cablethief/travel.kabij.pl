@@ -8,9 +8,8 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 );
 ---
 
-<BaseLayout title="Travel Stories">
+<BaseLayout>
   <h1 class="page-title">Departures</h1>
-  <p class="page-intro">Stories from wherever the team's been lately.</p>
 
   {
     posts.length === 0 ? (
@@ -33,11 +32,7 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 <style>
   .page-title {
     font-size: 2rem;
-  }
-  .page-intro {
-    color: var(--ink-soft);
-    margin-top: 0;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
   .board {
     border: 1px solid var(--board-line);
