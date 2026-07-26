@@ -9,24 +9,55 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 ---
 
 <BaseLayout title="Travel Stories">
-  <h1>Travel Stories</h1>
+  <h1 class="page-title">Departures</h1>
+  <p class="page-intro">Stories from wherever the team's been lately.</p>
+
   {
-    posts.map((post) => (
-      <PostCard
-        href={`/posts/${post.id}`}
-        title={post.data.title}
-        author={post.data.author}
-        pubDate={post.data.pubDate}
-        summary={post.data.summary}
-        coverImage={
-          post.data.coverImage && {
-            filename: post.data.coverImage,
-            author: post.data.author,
-            postSlug: post.id.split('/')[1],
-            alt: post.data.title,
-          }
-        }
-      />
-    ))
+    posts.length === 0 ? (
+      <p class="empty-state">No stories yet — check back soon.</p>
+    ) : (
+      <div class="board">
+        {posts.map((post, i) => (
+          <PostCard
+            index={i}
+            href={`/posts/${post.id}`}
+            title={post.data.title}
+            author={post.data.author}
+            pubDate={post.data.pubDate}
+            summary={post.data.summary}
+            coverImage={
+              post.data.coverImage && {
+                filename: post.data.coverImage,
+                author: post.data.author,
+                postSlug: post.id.split('/')[1],
+                alt: post.data.title,
+              }
+            }
+          />
+        ))}
+      </div>
+    )
   }
 </BaseLayout>
+
+<style>
+  .page-title {
+    font-size: 2rem;
+  }
+  .page-intro {
+    color: var(--ink-soft);
+    margin-top: 0;
+    margin-bottom: 2rem;
+  }
+  .board {
+    border: 1px solid var(--board-line);
+  }
+  .empty-state {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    padding: 3rem 0;
+    text-align: center;
+  }
+</style>

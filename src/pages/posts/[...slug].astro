@@ -12,15 +12,82 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
+
+const dateLabel = post.data.pubDate
+  .toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  .toUpperCase();
 ---
 
 <BaseLayout title={post.data.title} description={post.data.summary}>
-  <article>
-    <h1>{post.data.title}</h1>
-    <p>
-      <span>{post.data.author}</span> ·
-      <time datetime={post.data.pubDate.toISOString()}>{post.data.pubDate.toLocaleDateString()}</time>
-    </p>
-    <Content />
+  <article class="story">
+    <p class="story__back"><a href="/">&larr; All departures</a></p>
+    <h1 class="story__title">{post.data.title}</h1>
+    <div class="story__stub">
+      <span><span class="story__label">Traveller</span>{post.data.author}</span>
+      <span
+        ><span class="story__label">Date</span><time datetime={post.data.pubDate.toISOString()}>{dateLabel}</time
+        ></span
+      >
+    </div>
+    <div class="story__prose">
+      <Content />
+    </div>
   </article>
 </BaseLayout>
+
+<style>
+  .story__back {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .story__back a {
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+  .story__back a:hover {
+    color: var(--teal);
+  }
+
+  .story__title {
+    font-size: 2.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .story__stub {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    border-top: 1px dashed var(--board-line);
+    border-bottom: 1px dashed var(--board-line);
+    padding: 0.85rem 0;
+    margin-bottom: 2.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+  .story__label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 0.15rem;
+  }
+
+  .story__prose {
+    font-size: 1.0625rem;
+  }
+  .story__prose :global(p) {
+    margin: 0 0 1.4em;
+  }
+  .story__prose :global(img) {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--board-line);
+    margin: 2rem 0;
+  }
+  .story__prose :global(h2) {
+    margin-top: 2.5em;
+  }
+</style>
