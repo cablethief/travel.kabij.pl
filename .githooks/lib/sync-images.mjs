@@ -7,7 +7,7 @@ import { MissingIdentityError, readLocalAuthorIdentity } from './identity.mjs';
 import { collectReferencedFilenames, parsePost } from './frontmatter.mjs';
 
 function findPostFiles(root) {
-  const postsDir = path.join(root, 'src', 'content', 'posts');
+  const postsDir = path.join(root, 'content', 'posts');
   if (!existsSync(postsDir)) return [];
   const files = [];
   function walk(dir) {
@@ -31,14 +31,14 @@ async function downloadOne(url, destination) {
 
 /**
  * Downloads every image referenced by a checked-out post that isn't your
- * own (your own live in public/images/<mySlug>/ already — that's your
+ * own (your own live in content/images/<mySlug>/ already — that's your
  * write-folder, not something to pull). Never touches the Access-gated
  * Worker: derives the remote URL deterministically (filename + author +
  * post-slug, same template as src/lib/images.ts) and fetches straight from
  * R2's public custom domain, so this needs no authentication at all.
  * Doesn't re-download files that already exist locally — filenames are no
  * longer content-addressed, so this can go stale if someone edits an image
- * in place; delete the local file (or the whole public/images/<author>/
+ * in place; delete the local file (or the whole content/images/<author>/
  * folder) to force a fresh copy. Never throws: a missing dev-preview image
  * shouldn't block a checkout/merge.
  */
@@ -65,7 +65,7 @@ export async function syncImages() {
 
     for (const filename of collectReferencedFilenames(post)) {
       referencedCount++;
-      const destination = path.join(root, 'public', 'images', author, postSlug, filename);
+      const destination = path.join(root, 'content', 'images', author, postSlug, filename);
       if (existsSync(destination)) continue;
 
       const url = `${publicImagesBaseUrl}/${author}/${postSlug}/${filename}`;

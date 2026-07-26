@@ -48,13 +48,13 @@ function walk(dir, root, out = []) {
 
 /**
  * One-way, folder-authoritative push: uploads every new/changed file under
- * public/images/<mySlug>/ to R2. Never deletes anything remotely — removing
+ * content/images/<mySlug>/ to R2. Never deletes anything remotely — removing
  * a file from the folder just stops it being re-uploaded, it doesn't get
  * cleaned up on the server. No markdown involved at all: this doesn't know
  * or care which posts reference which files.
  */
 export async function syncMyImages({ root, mySlug, workerBaseUrl, getAccessToken }) {
-  const myImagesDir = path.join(root, 'public', 'images', mySlug);
+  const myImagesDir = path.join(root, 'content', 'images', mySlug);
   const cache = loadCache(root);
 
   if (!existsSync(myImagesDir)) {
@@ -69,7 +69,7 @@ export async function syncMyImages({ root, mySlug, workerBaseUrl, getAccessToken
     const ext = path.extname(relativePath).toLowerCase();
     const contentType = CONTENT_TYPES[ext];
     if (!contentType) {
-      throw new SyncImagesError(`public/images/${mySlug}/${relativePath} has an unsupported extension "${ext}". Allowed: ${Object.keys(CONTENT_TYPES).join(', ')}`);
+      throw new SyncImagesError(`content/images/${mySlug}/${relativePath} has an unsupported extension "${ext}". Allowed: ${Object.keys(CONTENT_TYPES).join(', ')}`);
     }
 
     const buffer = readFileSync(absPath);

@@ -11,19 +11,19 @@ the whole flow.
 
 ## 1. Create your post
 
-Posts live at `src/content/posts/<your-slug>/<post-slug>/index.md`. Your slug
+Posts live at `content/posts/<your-slug>/<post-slug>/index.md`. Your slug
 is the local part of your email — `jane.doe@company.com` becomes `jane-doe`.
-This post's own path is `src/content/posts/michaelkruger/how-posting-works/index.md`.
+This post's own path is `content/posts/michaelkruger/how-posting-works/index.md`.
 
 Frontmatter needs a `title`, `author` (must match your slug), and `pubDate`.
 `coverImage` and `summary` are optional.
 
 ## 2. Drop your photos in the matching folder
 
-Photos go in `public/images/<your-slug>/<post-slug>/` — same slug, same
-post-slug, just under `public/images/` instead of `src/content/posts/`. This
+Photos go in `content/images/<your-slug>/<post-slug>/` — same slug, same
+post-slug, just under `content/images/` instead of `content/posts/`. This
 post's picture lives at
-`public/images/michaelkruger/how-posting-works/drop-photos-here.png`.
+`content/images/michaelkruger/how-posting-works/drop-photos-here.png`.
 
 ![A generated placeholder image standing in for a real travel photo](drop-photos-here.png)
 
@@ -38,7 +38,7 @@ changes, no matter what happens next.
 npm run publish-images
 ```
 
-This uploads anything new or changed under your own `public/images/<your-slug>/`
+This uploads anything new or changed under your own `content/images/<your-slug>/`
 to R2. It needs you to be logged in via `cloudflared access login` first. It's
 a plain one-way push — it doesn't delete anything remotely, even if you later
 remove a file locally.

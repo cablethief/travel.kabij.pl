@@ -9,13 +9,13 @@ a plain filename always resolves to the right URL, in dev and in prod alike.
 
 - **The blog is public.** Anyone can read the site and its images, no login
   required.
-- **Your own images live in `public/images/<your-slug>/<post-slug>/`.**
+- **Your own images live in `content/images/<your-slug>/<post-slug>/`.**
   You drop files there directly — it's a normal folder, not something a tool
   generates. It's gitignored; R2 is the source of truth for what's actually
   published.
 - **`npm run publish-images` syncs that folder to R2.** One-way, folder
   push: it uploads anything new or changed under your own
-  `public/images/<your-slug>/`. It does **not** delete anything remotely if
+  `content/images/<your-slug>/`. It does **not** delete anything remotely if
   you remove a local file — sync only ever adds/updates. This needs
   Cloudflare Access (you authenticate once via `cloudflared`).
 - **Your markdown never gets rewritten.** Write `![alt](glacier.jpg)` inline,
@@ -26,7 +26,7 @@ a plain filename always resolves to the right URL, in dev and in prod alike.
   there's no "did I forget to run a tool and now my file is wrong" state to
   worry about.
 - **`npm run pull-images` downloads other authors' images** into
-  `public/images/<their-slug>/...` so `npm run dev` has something to render
+  `content/images/<their-slug>/...` so `npm run dev` has something to render
   locally for posts that aren't yours. This needs **no authentication at
   all** — it derives what to download directly from every checked-out
   post's own content, then fetches straight from R2's public custom domain
@@ -66,17 +66,17 @@ npm run dev
 
 ## Writing a post with images
 
-Posts live at `src/content/posts/<your-slug>/<post-slug>/index.md`. Your
+Posts live at `content/posts/<your-slug>/<post-slug>/index.md`. Your
 slug is derived from the local-part of your email (e.g.
 `jane.doe@company.com` → `jane-doe`) — no need to look it up, just match the
 directory to your own `npm run whoami` email.
 
-Put your images in the matching folder under `public/images/`, using the
+Put your images in the matching folder under `content/images/`, using the
 **same post-slug** as the post directory:
 
 ```
-public/images/jane-doe/patagonia-trip/glacier.jpg
-src/content/posts/jane-doe/patagonia-trip/index.md
+content/images/jane-doe/patagonia-trip/glacier.jpg
+content/posts/jane-doe/patagonia-trip/index.md
 ```
 
 Reference them by plain filename — frontmatter's `coverImage` and inline
@@ -100,7 +100,7 @@ publish:
 npm run publish-images
 ```
 
-This uploads every new/changed file under `public/images/jane-doe/` to R2.
+This uploads every new/changed file under `content/images/jane-doe/` to R2.
 It's a plain one-way folder push, not something that reads your posts at
 all — it doesn't know or care which files are actually referenced by which
 post, it just mirrors what's in your folder. Removing a file locally does
@@ -115,7 +115,7 @@ or `wrangler r2 object delete`).
 ## Automatic hooks (git only)
 
 There's no git-hook equivalent for **publishing** — images live in a
-gitignored folder (`public/images/`), so there's no git-trackable event to
+gitignored folder (`content/images/`), so there's no git-trackable event to
 hook into. `npm run publish-images` is always a manual step, for everyone,
 regardless of git or jj.
 
@@ -129,11 +129,16 @@ workflow is jj, run `npm run pull-images` manually after pulling.
 
 ```
 contravel/
-├── src/
-│   ├── lib/images.ts              resolveImageSrc(): the one place filename -> URL happens
-│   └── remark-resolve-images.mjs  build-time rewrite of inline markdown image refs
-├── public/images/        gitignored — your own images (read-write) +
+├── content/
+│   ├── posts/            your actual blog posts (committed)
+│   └── images/           gitignored — your own images (read-write) +
 │                         downloaded copies of others' (read-only), same tree
+├── src/
+│   ├── content.config.ts          content-collection schema, points at content/posts/
+│   ├── lib/images.ts               resolveImageSrc(): the one place filename -> URL happens
+│   └── remark-resolve-images.mjs  build-time rewrite of inline markdown image refs
+├── vite-plugin-content-images.mjs  dev-only: serves /images/* from content/images/
+│                                   (production never uses this — see Architecture below)
 ├── worker/               Cloudflare Worker: Access-gated image uploads + R2
 ├── config/
 │   └── hooks.config.json    non-secret Worker/image base URLs, committed
@@ -142,6 +147,13 @@ contravel/
                           publish-images / pull-images scripts npm run invokes directly
 ```
 
+- **`content/images/` is not `public/`, on purpose.** It's gitignored
+  contributor state, not a real static-asset directory, and Cloudflare
+  Pages' build never sees it at all (fresh clone, nothing there). Production
+  always resolves images through R2, never through anything under this
+  folder — the Vite plugin exists purely so `npm run dev` has something to
+  render locally, standing in for what Vite's automatic `public/` serving
+  would otherwise give for free.
 - **Reads bypass the Worker entirely.** Individual images are served
   directly from R2's own public custom domain (`images.travel.kabij.pl`) —
   a plain `GET` by key, no application logic involved.

@@ -14,7 +14,7 @@ dist/
 # your own images (synced to R2 via `npm run publish-images`) plus
 # downloaded copies of other authors' images for local preview
 # (`npm run pull-images`). Never committed — R2 is the source of truth.
-public/images/
+content/images/
 
 # hook sync-manifest cache
 .githooks/cache/

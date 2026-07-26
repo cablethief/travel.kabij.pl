@@ -24,7 +24,7 @@ async function main() {
 
   try {
     const { checked, uploaded } = await syncMyImages({ root, mySlug: identity.slug, workerBaseUrl, getAccessToken });
-    console.log(`publish-images: checked ${checked} local image(s) under public/images/${identity.slug}/, uploaded ${uploaded}.`);
+    console.log(`publish-images: checked ${checked} local image(s) under content/images/${identity.slug}/, uploaded ${uploaded}.`);
   } catch (err) {
     if (err instanceof SyncImagesError) {
       console.error(`publish-images: ${err.message}`);

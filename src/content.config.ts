@@ -6,7 +6,7 @@ const posts = defineCollection({
   // matching the on-disk posts/<author-slug>/<post-slug>/index.md layout.
   loader: glob({
     pattern: '**/index.md',
-    base: './src/content/posts',
+    base: './content/posts',
     generateId: ({ entry }) => entry.replace(/\/index\.md$/, ''),
   }),
   schema: z.object({
@@ -18,7 +18,7 @@ const posts = defineCollection({
     summary: z.string().optional(),
     // Plain filename, e.g. "glacier.jpg" — resolved to a real URL at render
     // time by resolveImageSrc(), never a stored URL. Lives alongside the
-    // post's index.md under public/images/<author>/<post-slug>/.
+    // post's index.md under content/images/<author>/<post-slug>/.
     coverImage: z.string().optional(),
   }),
 });
