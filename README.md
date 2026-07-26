@@ -75,7 +75,21 @@ slug is derived from the local-part of your email (e.g.
 `jane.doe@company.com` → `jane-doe`) — no need to look it up, just match the
 directory to your own `npm run whoami` email.
 
-Put your images in an `images/` subfolder right inside the post's own
+The easiest way to start one:
+
+```sh
+npm run new-post -- --title "Three weeks in Patagonia" [--slug custom-slug] [--summary "..."]
+```
+
+This creates `content/posts/<your-slug>/<post-slug>/index.md` (slug derived
+from the title unless you pass `--slug`) with frontmatter already filled
+in, plus an empty `images/` folder next to it ready for photos. It's marked
+`draft: true`, so it won't show up on the site until you remove that line —
+refuses to run if the folder already exists, so it never overwrites a real
+post. You can just as easily create the folder and file by hand instead;
+this only saves typing.
+
+Put your images in that `images/` subfolder right inside the post's own
 directory:
 
 ```
@@ -153,7 +167,8 @@ contravel/
 │   └── hooks.config.json    non-secret Worker/image base URLs, committed
 ├── .contravel-author.json   LOCAL ONLY, gitignored — your identity for the hooks
 └── .githooks/            post-checkout / post-merge (pull only), plus the
-                          publish-images / pull-images scripts npm run invokes directly
+                          new-post / publish-images / pull-images scripts
+                          npm run invokes directly
 ```
 
 - **Images live inside each post's own directory, not a separate tree —
